@@ -11,6 +11,11 @@ Information on how to set up an arm-none-eabi-gcc toolchain required to compile 
 
 Documentation on the peripheral library can be found in the file **stm32f10x_stdperiph_lib_um.chm**
 
+##Subfolders
++ **Project**: contains the example code, place your projects here
++ **Libraries**: contains the STM32F10x peripheral library and CMSIS files
++ **Utilities**: contains more libraries for the STM32F10x evaluation boards
+
 Examples:
 
 + **GPIO** example featuring setting and reading from IO pins
