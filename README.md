@@ -9,6 +9,8 @@ This working directory, especially the Makefile is base upon the [STM32F4 Discov
 
 Information on how to set up an arm-none-eabi-gcc toolchain required to compile code for the STM32F microcontrollers can be found [here](http://eliaselectronics.com/stm32f4-tutorials/setting-up-the-stm32f4-arm-development-toolchain/)
 
+Documentation on the peripheral library can be found in the file **stm32f10x_stdperiph_lib_um.chm**
+
 Examples:
 
 + **GPIO** example featuring setting and reading from IO pins
