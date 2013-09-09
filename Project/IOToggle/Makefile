@@ -1,4 +1,4 @@
-TARGET=main.hex
+TARGET=main
 EXECUTABLE=main.elf
 
 CC=arm-none-eabi-gcc
