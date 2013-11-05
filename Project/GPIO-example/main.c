@@ -6,7 +6,7 @@ void Delay(__IO uint32_t nCount) {
 }
 
 /* This funcion shows how to initialize 
- * the GPIO pins on GPIOD and how to configure
+ * the GPIO pins on GPIOC and how to configure
  * them as inputs and outputs 
  */
 void init_GPIO(void){
@@ -35,7 +35,7 @@ void init_GPIO(void){
 	 * It is also mentioned at the beginning of the peripheral library's 
 	 * source file, e.g. stm32f10x_gpio.c
 	 */
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
 	
 	/* In this block of instructions all the properties
 	 * of the peripheral, the GPIO port in this case,
@@ -43,18 +43,20 @@ void init_GPIO(void){
 	 * given to the Init function which takes care of 
 	 * the low level stuff (setting the correct bits in the 
 	 * peripheral's control register)
-	 * PD12 thru PD15
+	 * PC8 and PC9
 	 */
-	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_15 | GPIO_Pin_14 | GPIO_Pin_13 | GPIO_Pin_12; // we want to configure all LED GPIO pins
+	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_8; // we want to configure all LED GPIO pins
 	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_PP; 	// we want the pins to be a push-pull output
 	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz; 	// this sets the GPIO modules clock speed
-	GPIO_Init(GPIOD, &GPIO_InitStruct); 			// this finally passes all the values to the GPIO_Init function which takes care of setting the corresponding bits.
+	GPIO_Init(GPIOC, &GPIO_InitStruct); 			// this finally passes all the values to the GPIO_Init function which takes care of setting the corresponding bits.
 		
 	/* Here the GPIOD module is initialized.
-	 * We want to use PD0 as an input because
+	 * We want to use PA0 as an input because
 	 * the USER button on the board is connected
 	 * between this pin and VCC.
 	 */
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+
 	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_0;		  // we want to configure PA0
 	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IPD; 	  // we want it to be an input with a pull-down resistor enabled
 	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;//this sets the GPIO modules clock speed
@@ -66,7 +68,7 @@ int main(void){
   // initialize the GPIO pins we need
   init_GPIO();
 
-  /* This flashed the LEDs on the board once
+  /* This flashes the LEDs on the board once
    * Two registers are used to set the pins (pin level is VCC)
    * or to reset the pins (pin level is GND)
    * 
@@ -76,55 +78,18 @@ int main(void){
    * A logical 1 in BSRR will set the pin and a logical 1 in BRR will
    * reset the pin. A logical 0 in either register has no effect
    */
-  GPIOD->BSRR = 0xF000; // set PD12 thru PD15
-  Delay(1000000L);		 // wait a short period of time
-  GPIOD->BRR = 0xF000; // reset PD12 thru PD15
-  
-  // this counter is used to count the number of button presses
-  uint8_t i = 0; 
+  GPIOC->ODR = 0x0300; // set PD8 and PC9
 
   while (1){  
-    
-		/* Every GPIO port has an input and 
-		 * output data register, ODR and IDR 
-		 * respectively, which hold the status of the pin
-		 * 
-		 * Here the IDR of GPIOD is checked whether bit 0 is
-		 * set or not. If it's set the button is pressed
-		 */
-		if(GPIOD->IDR & 0x0001){
-			// if the number of button presses is greater than 4, reset the counter (we start counting from 0!)
-			if(i > 3){
-				i = 0;
-			}
-			else{ // if it's smaller than 4, switch the LEDs
-			
-				switch(i){
-				
-					case 0:
-						GPIOD->BSRR = 0x1000; // this sets LED1 (green)
-						GPIOD->BRR = 0x8000; // this resets LED4 (blue)
-						break;
-				
-					case 1:
-						GPIOD->BSRR = 0x2000; // this sets LED2 (orange)
-						GPIOD->BRR = 0x1000; // this resets LED1 
-						break;
-							
-					case 2:
-						GPIOD->BSRR = 0x4000; // this sets LED3 (red)
-						GPIOD->BRR = 0x2000; // this resets LED2
-						break;
-							
-					case 3: 
-						GPIOD->BSRR = 0x8000; // this sets LED4
-						GPIOD->BRR = 0x4000; // this resets LED3
-						break;
-					}
-				
-				i++; // increase the counter every time the switch is pressed
-			}
-			Delay(3000000L); // add a small delay to debounce the switch
+		GPIOC->ODR |= 0x0100; 	// set PC8 without affecting other bits
+		
+		if (GPIOA->IDR & 0x0001)// check if PA0 button is pressed
+		{	
+			GPIOC->ODR |= 0x0200;// turn on PC9
 		}
+		Delay(1000000L);		// wait a little
+		
+		GPIOC->ODR &= ~0x0300;	// clear PC8 and PC9
+		Delay(1000000L);		// wait a little
 	}
 }
