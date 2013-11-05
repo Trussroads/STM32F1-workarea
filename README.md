@@ -19,6 +19,7 @@ Documentation on the peripheral library can be found in the file **stm32f10x_std
 Examples:
 
 + **GPIO** example featuring setting and reading from IO pins
++ **WS2812** example on how to drive a WS2812 RGB LED using PWM and DMA
 
 ###This code is licensed under the Creative Commons Attribution license v3.0
 
