@@ -6,10 +6,10 @@ void Delay(__IO uint32_t nCount) {
 }
 
 /* This funcion shows how to initialize 
- * the GPIO pins on GPIOC and how to configure
+ * the GPIO pins on GPIOC / GPIOA and how to configure
  * them as inputs and outputs 
  */
-void init_GPIO(void){
+void GPIO_init(void){
 	
 	/* This TypeDef is a structure defined in the
 	 * ST's library and it contains all the properties
@@ -66,30 +66,24 @@ void init_GPIO(void){
 int main(void){
   
   // initialize the GPIO pins we need
-  init_GPIO();
+  GPIO_init();
 
   /* This flashes the LEDs on the board once
    * Two registers are used to set the pins (pin level is VCC)
    * or to reset the pins (pin level is GND)
-   * 
-   * BSRR stands for bit set/reset register
-   * it is seperated into a high and a low word (each of 16 bit size)
-   * 
-   * A logical 1 in BSRR will set the pin and a logical 1 in BRR will
-   * reset the pin. A logical 0 in either register has no effect
    */
-  GPIOC->ODR = 0x0300; // set PD8 and PC9
+  GPIOC->ODR = GPIO_Pin_8 | GPIO_Pin_9; // set PD8 and PC9
 
   while (1){  
-		GPIOC->ODR |= 0x0100; 	// set PC8 without affecting other bits
+		GPIOC->ODR |= GPIO_Pin_8; 		// set PC8 without affecting other bits
 		
-		if (GPIOA->IDR & 0x0001)// check if PA0 button is pressed
+		if (GPIOA->IDR & GPIO_Pin_0)	// check if PA0 button is pressed
 		{	
-			GPIOC->ODR |= 0x0200;// turn on PC9
+			GPIOC->ODR |= GPIO_Pin_9;	// turn on PC9
 		}
-		Delay(1000000L);		// wait a little
+		Delay(1000000L);				// wait a little
 		
-		GPIOC->ODR &= ~0x0300;	// clear PC8 and PC9
-		Delay(1000000L);		// wait a little
+		GPIOC->ODR &= ~GPIO_Pin_9;		// clear PC8 and PC9
+		Delay(1000000L);				// wait a little
 	}
 }
