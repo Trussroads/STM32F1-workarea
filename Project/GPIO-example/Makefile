@@ -1,4 +1,4 @@
-TARGET=main.hex
+TARGET=main
 EXECUTABLE=main.elf
 
 CC=arm-none-eabi-gcc
@@ -94,9 +94,9 @@ OBJDIR = .
 OBJ = $(SRC:%.c=$(OBJDIR)/%.o) 
 OBJ += Startup.o
 
-all: $(TARGET)
+all: $(TARGET).hex
 
-$(TARGET): $(EXECUTABLE)
+$(TARGET).hex: $(EXECUTABLE)
 	$(CP) -O ihex $^ $@
 
 $(EXECUTABLE): $(SRC) $(STARTUP)
