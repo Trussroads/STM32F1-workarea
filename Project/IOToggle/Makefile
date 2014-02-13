@@ -1,4 +1,4 @@
-TARGET=main.hex
+TARGET=main
 EXECUTABLE=main.elf
 
 CC=arm-none-eabi-gcc
@@ -48,8 +48,8 @@ BIN=$(CP) -O ihex
 #
 # HSE_VALUE sets the value of the HSE clock, 8MHz in this case 
 
-DEFS = -DUSE_STDPERIPH_DRIVER -DSTM32F10X_MD -DHSE_VALUE=8000000
-STARTUP = ../../Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x/startup/gcc_ride7/startup_stm32f10x_md.s
+DEFS = -DUSE_STDPERIPH_DRIVER -DSTM32F10X_MD_VL -DHSE_VALUE=8000000
+STARTUP = ../../Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x/startup/gcc_ride7/startup_stm32f10x_md_vl.s
 
 MCU = cortex-m3
 MCFLAGS = -mcpu=$(MCU) -mthumb -mlittle-endian -mthumb-interwork
@@ -94,9 +94,9 @@ OBJDIR = .
 OBJ = $(SRC:%.c=$(OBJDIR)/%.o) 
 OBJ += Startup.o
 
-all: $(TARGET)
+all: $(TARGET).hex
 
-$(TARGET): $(EXECUTABLE)
+$(TARGET).hex: $(EXECUTABLE)
 	$(CP) -O ihex $^ $@
 
 $(EXECUTABLE): $(SRC) $(STARTUP)
