@@ -928,10 +928,10 @@ void WS2812_send(uint8_t (*color)[3], uint16_t len)
 	}
 
 	DMA_SetCurrDataCounter(DMA1_Channel6, buffersize); 	// load number of bytes to be transferred
-	DMA_Cmd(DMA1_Channel6, ENABLE); 			// enable DMA channel 6
+	TIM_SetCounter(TIM3, 0);
 	TIM_Cmd(TIM3, ENABLE); 						// enable Timer 3
+	DMA_Cmd(DMA1_Channel6, ENABLE); 			// enable DMA channel 6
 	while(!DMA_GetFlagStatus(DMA1_FLAG_TC6)); 	// wait until transfer complete
-	TIM_Cmd(TIM3, DISABLE); 					// disable Timer 3
 	DMA_Cmd(DMA1_Channel6, DISABLE); 			// disable DMA channel 6
 	DMA_ClearFlag(DMA1_FLAG_TC6); 				// clear DMA1 Channel 6 transfer complete flag
 }
@@ -962,4 +962,5 @@ int main(void) {
 			Delay(50000L);
 		}
 	}
+	TIM_Cmd(TIM3, DISABLE); 					// disable Timer 3
 }
