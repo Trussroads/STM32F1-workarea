@@ -1,5 +1,7 @@
 #include <stm32f10x.h>
 
+#define NUM_LEDS 10
+
 void Delay(__IO uint32_t nCount) {
   while(nCount--) {
   }
@@ -25,7 +27,7 @@ DMA_InitTypeDef DMA_InitStructure;
  * This leaves us with a maximum string length of
  * (2^16 bytes per DMA stream - 42 bytes)/24 bytes per LED = 2728 LEDs
  */
-uint16_t LED_BYTE_Buffer[100];	
+uint16_t LED_BYTE_Buffer[24 * NUM_LEDS + 42];
 
 /* this array holds the RGB values to represent 
  * a color wheel using 256 steps on each emitter
@@ -852,6 +854,28 @@ void Timer3_init(void)
 	
 	/* TIM3 CC1 DMA Request enable */
 	TIM_DMACmd(TIM3, TIM_DMA_CC1, ENABLE);
+
+	DMA_ITConfig(DMA1_Channel6, DMA_IT_TC, ENABLE);
+
+    NVIC_InitTypeDef NVIC_InitStructure;
+
+    NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel6_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+
+}
+
+volatile uint8_t ws2811LedDataTransferInProgress = 0;
+
+void DMA1_Channel6_IRQHandler(void)
+{
+    if (DMA_GetFlagStatus(DMA1_FLAG_TC6)) {
+        ws2811LedDataTransferInProgress = 0;
+        DMA_Cmd(DMA1_Channel6, DISABLE);            // disable DMA channel 6
+        DMA_ClearFlag(DMA1_FLAG_TC6);               // clear DMA1 Channel 6 transfer complete flag
+    }
 }
 
 /* This function sends data bytes out to a string of WS2812s
@@ -861,6 +885,9 @@ void Timer3_init(void)
  * This will result in the RGB triplet passed by argument 1 being sent to 
  * the LED that is the furthest away from the controller (the point where
  * data is injected into the chain)
+ *
+ * this method is non-blocking unless an existing LED update is in progress.
+ * it does not wait until all the LEDs have been updated, that happens in the background.
  */
 void WS2812_send(uint8_t (*color)[3], uint16_t len)
 {
@@ -868,6 +895,8 @@ void WS2812_send(uint8_t (*color)[3], uint16_t len)
 	uint8_t led;
 	uint16_t memaddr;
 	uint16_t buffersize;
+
+	while(ws2811LedDataTransferInProgress);   // wait until previous transfer completes
 
 	buffersize = (len*24)+42;	// number of bytes needed is #LEDs * 24 bytes + 42 trailing bytes
 	memaddr = 0;				// reset buffer memory index
@@ -927,13 +956,12 @@ void WS2812_send(uint8_t (*color)[3], uint16_t len)
 		memaddr++;
 	}
 
+	ws2811LedDataTransferInProgress = 1;
+
 	DMA_SetCurrDataCounter(DMA1_Channel6, buffersize); 	// load number of bytes to be transferred
 	TIM_SetCounter(TIM3, 0);
 	TIM_Cmd(TIM3, ENABLE); 						// enable Timer 3
 	DMA_Cmd(DMA1_Channel6, ENABLE); 			// enable DMA channel 6
-	while(!DMA_GetFlagStatus(DMA1_FLAG_TC6)); 	// wait until transfer complete
-	DMA_Cmd(DMA1_Channel6, DISABLE); 			// disable DMA channel 6
-	DMA_ClearFlag(DMA1_FLAG_TC6); 				// clear DMA1 Channel 6 transfer complete flag
 }
 
 int main(void) {
@@ -941,26 +969,26 @@ int main(void) {
 	
 	int16_t i;
 	
+	int16_t idleCounter;
+
 	while (1){  
-		/* first cycle through the colors on 2 LEDs chained together
+		/* first cycle through the colors on the LEDs chained together
 		 * last LED in the chain will receive first sent triplet
 		 * --> last LED in the chain will 'lead' 
 		 */
-		for (i = 0; i < 766; i += 2)
+		for (i = 0; i < 766 - NUM_LEDS; i += 1)
 		{
-			WS2812_send(&eightbit[i], 2);
-			Delay(50000L);
+			WS2812_send(&eightbit[i], NUM_LEDS);
+
+		    idleCounter = 0;
+			while(ws2811LedDataTransferInProgress) {
+			    // the main loop is free to do other work while the LEDs are being updated, such as updating this idle counter
+			    idleCounter++;
+			}
+
+			Delay(5000L);
 		}
 		
-		/* cycle through the colors on only one LED
-		 * this time only the first LED that data is 
-		 * fed into will update
-		 */
-		for (i = 0; i < 766; i += 1)
-		{
-			WS2812_send(&eightbit[i], 1);
-			Delay(50000L);
-		}
 	}
 	TIM_Cmd(TIM3, DISABLE); 					// disable Timer 3
 }
